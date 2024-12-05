@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "attportal"
+version = "0.1.0"
+description = ""
+authors = ["Truong Tang <txt2408@gmail.com>"]
+readme = "README.md"
+packages = [
+    { include = "src", from = "." },
+]
+
+[tool.poetry.scripts]
+start = "src.app.main:main"
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.115.6"
+requests = "^2.32.3"
+sqlalchemy = "^2.0.36"
+uvicorn = "^0.32.1"
+pydantic-settings = "^2.6.1"
+python-dotenv = "^1.0.1"
+httpx = "^0.28.0"
+psycopg2-binary = "^2.9.10"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,63 @@
+# FastAPI project
+.env
+.env.dev
+.env.prod
+.env.test
+.env.travis
+*.egg-info
+*.egg
+*.spec
+*.mo
+*.pot
+.local
+.tox
+.nox
+.coverage
+.cache
+nosetests.xml
+coverage.xml
+*.db
+*.sqlite
+*.db-journal
+instance
+.mypy_cache
+.pytest_cache
+
+# PyCharm
+.idea
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Runtime data
+pypackage
+node_modules
+build
+dist
+
+# Tests
+.tox
+.nox
+.coverage
+.cache
+nosetests.xml
+coverage.xml
+
+# Temporary files
+*.swp
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+__pycache__/
