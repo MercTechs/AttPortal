@@ -31,13 +31,12 @@ async def sync_attendance_data(
     from_date: datetime = Query(default_factory=lambda: datetime.now() - timedelta(days=7)),
     to_date: datetime = Query(default_factory=lambda: datetime.now()),
     employee_id: Optional[str] = None,
-    postgres_manager: PostgresManager = Depends(get_postgres_manager),
+    session: Session = Depends(get_postgres_manager),
     attendance_service: AttendanceService = Depends(get_attendance_service)
 ):
     """
     Sync attendance data from external API and store in database
     """
-    session = postgres_manager.Session()
     try:
         # Validate date range
         if from_date > to_date:
@@ -124,12 +123,11 @@ async def get_attendance_records(
     from_date: datetime = Query(default_factory=lambda: datetime.now() - timedelta(days=7)),
     to_date: datetime = Query(default_factory=lambda: datetime.now()),
     employee_id: Optional[str] = None,
-    postgres_manager: PostgresManager = Depends(get_postgres_manager),
+    session: Session = Depends(get_postgres_manager),
 ):
     """
     Get attendance records from local database with pagination and filtering
     """
-    session = postgres_manager.Session()
     try:
         if from_date > to_date:
             raise ValueError("From date must be before or equal to to date")
@@ -160,9 +158,9 @@ async def get_attendance_records(
                 employee_name=str(record.employee_name),
                 machine_alias=str(record.machine_alias),
                 machine_serial=str(record.machine_serial),
-                att_date=record.att_date.date(),  
-                check_time=record.check_time.datetime(),
-                created_at=record.created_at.datetime(),
+                att_date=record.att_date,  
+                check_time=record.check_time,
+                created_at=record.created_at,
                 sync_status=str(record.sync_status)
             ) for record in orm_records
         ]
@@ -196,13 +194,12 @@ async def get_attendance_records(
 
 @router.get("/devices", response_model=List[DeviceResponse])
 async def get_devices(
-    postgres_manager: PostgresManager = Depends(get_postgres_manager),
+    session: Session = Depends(get_postgres_manager),
     attendance_service: AttendanceService = Depends(get_attendance_service)
 ):
     """
     Get list of all attendance devices from the external API and sync with database
     """
-    session = postgres_manager.Session()
     try:
         # Fetch from API
         api_devices = await attendance_service.fetch_device_list()
