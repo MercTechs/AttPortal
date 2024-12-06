@@ -19,5 +19,6 @@ class Settings(BaseSettings):
     EXTERNAL_API_URL: str = os.getenv('EXTERNAL_API_URL', "http://192.168.2.120:6900/api/hpa/Paradise")
     EXTERNAL_API_USER: str = os.getenv('EXTERNAL_API_USER', "admin")
     EXTERNAL_API_PASSWORD: str = os.getenv('EXTERNAL_API_PASSWORD', "1234")
+    ACCESS_CODE: str = os.getenv('ACCESS_CODE', "X7#mK9pL$fR2")
 
 settings = Settings()

@@ -19,9 +19,9 @@ from src.app.models.entities.schemas import (
 from src.app.models.entities.orm import AttendanceDevice, DeviceSyncStatus
 from src.app.services.attendance_service import AttendanceService
 from src.app.dependencies.dependencies import get_postgres_manager, get_attendance_service
-from src.app.db.postgres import PostgresManager
 import httpx
 from typing import List
+
 router = APIRouter()
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
