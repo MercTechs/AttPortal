@@ -82,12 +82,20 @@ class AttendanceService:
         return await self._make_api_request("API_EmployeeListByDevices", params)
 
     def parse_attendance_records(
-        self, api_records: List[Dict[str, Any]]
+        self, api_records: List[Dict[str, Any]], session
     ) -> List[AttendanceRecord]:
         """
         Parse API response into AttendanceRecord objects
         """
-        return [AttendanceRecord.from_api_response(record) for record in api_records]
+        records = []
+        for record in api_records:
+            # Get the device for this record
+            device = session.query(AttendanceDevice).filter_by(
+                serial_number=record["sn"]
+            ).first()
+            if device:
+                records.append(AttendanceRecord.from_api_response(record, device))
+        return records
 
     async def sync_devices(self, session) -> tuple[int, int]:
         """

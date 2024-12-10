@@ -45,6 +45,7 @@ class AttendanceRecordResponse(BaseModel):
     att_date: datetime
     check_time: datetime
     created_at: datetime
+    attendance_status: str
     sync_status: str
 
     class Config:

@@ -88,20 +88,32 @@ class AttendanceRecord(Base):
     # Additional fields for data tracking
     created_at = Column(DateTime, nullable=False, default=datetime.now)
     sync_status = Column(String, nullable=False, default="synced")  
+    attendance_status = Column(String, nullable=True)
     
     # Relationship
     device = relationship("AttendanceDevice", back_populates="attendance_records")
 
     @classmethod
-    def from_api_response(cls, api_record):
+    def from_api_response(cls, api_record, device):
         """
         Create an AttendanceRecord instance from API response data
         """
-        return cls(
+        record = cls(
             att_date=datetime.fromisoformat(api_record["AttDate"]),
             check_time=datetime.fromisoformat(api_record["AttTime"]),
             employee_id=api_record["EmployeeID"],
             employee_name=api_record["FullName"],
             machine_alias=api_record["MachineAlias"],
-            machine_serial=api_record["sn"]
+            machine_serial=api_record["sn"],
+            device_uuid=device.uuid, 
+            device=device 
         )
+        
+        # Set attendance status based on device type
+        if device and device.device_type:
+            if device.device_type == DeviceType.CHECK_IN:
+                record.attendance_status = "Check In"
+            elif device.device_type == DeviceType.CHECK_OUT:
+                record.attendance_status = "Check Out"
+        
+        return record

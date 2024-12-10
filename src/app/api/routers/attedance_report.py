@@ -5,7 +5,7 @@ from typing import Optional
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm.exc import DetachedInstanceError
 from sqlalchemy.orm import Session
-from src.app.models.entities.orm import AttendanceRecord
+from src.app.models.entities.orm import AttendanceRecord, DeviceType, AttendanceDevice
 from src.app.models.entities.schemas import (
     AttendanceSyncResponse,
     AttendanceRecordResponse,
@@ -21,6 +21,7 @@ from src.app.services.attendance_service import AttendanceService
 from src.app.dependencies.dependencies import get_postgres_manager, get_attendance_service
 import httpx
 from typing import List
+
 
 router = APIRouter()
 logging.basicConfig(level=logging.DEBUG)
@@ -56,8 +57,18 @@ async def sync_attendance_data(
                 records_count=0
             )
 
-        # Convert to AttendanceRecord objects
-        attendance_records = attendance_service.parse_attendance_records(api_records)
+        # Parse API response into AttendanceRecord objects
+        try:
+            orm_records = attendance_service.parse_attendance_records(
+                api_records=api_records,
+                session=session
+            )
+        except Exception as e:
+            logger.error(f"Error parsing attendance records: {e}")
+            raise HTTPException(
+                status_code=500,
+                detail="An unexpected error occurred while parsing attendance records"
+            )
         
         # Track new records count
         new_records_count = 0
@@ -71,7 +82,7 @@ async def sync_attendance_data(
         }
         
         records_to_add = []
-        for record in attendance_records:
+        for record in orm_records:
             record_key = (record.employee_id, record.check_time, record.machine_serial)
             if record_key not in existing_records:
                 records_to_add.append(record)
@@ -158,9 +169,10 @@ async def get_attendance_records(
                 employee_name=str(record.employee_name),
                 machine_alias=str(record.machine_alias),
                 machine_serial=str(record.machine_serial),
-                att_date=record.att_date,  
-                check_time=record.check_time,
-                created_at=record.created_at,
+                att_date=record.att_date,  #type: ignore
+                check_time=record.check_time, #type: ignore
+                created_at=record.created_at, #type: ignore
+                attendance_status=str(record.attendance_status),
                 sync_status=str(record.sync_status)
             ) for record in orm_records
         ]
@@ -316,4 +328,48 @@ async def update_device_type(
         raise HTTPException(
             status_code=500,
             detail="An unexpected error occurred while updating device type"
+        )
+
+@router.post("/devices/{serial_number}/update-attendance-status")
+async def update_attendance_status_for_device(
+    serial_number: str,
+    session: Session = Depends(get_postgres_manager)
+):
+    """
+    Update attendance status for all records of a device based on its device type
+    """
+    try:
+        # Find the device
+        device = session.query(AttendanceDevice).filter(
+            AttendanceDevice.serial_number == serial_number
+        ).first()
+        
+        if device is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Device with serial number {serial_number} not found"
+            )
+            
+        attendance_status = "Check In" if device.device_type.value == DeviceType.CHECK_IN.value else "Check Out"
+        
+        updated = session.query(AttendanceRecord).filter(
+            AttendanceRecord.machine_serial == serial_number
+        ).update(
+            {"attendance_status": attendance_status},
+            synchronize_session=False
+        )
+        
+        session.commit()
+        
+        return {
+            "message": f"Successfully updated {updated} records for device {serial_number}",
+            "updated_records": updated
+        }
+        
+    except SQLAlchemyError as e:
+        session.rollback()
+        logger.error(f"Database error in update_attendance_status_for_device: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="An error occurred while updating attendance status"
         )
